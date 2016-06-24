@@ -18,8 +18,8 @@ div.main_div {
 	position: absolute;
 	visibility: visible;
 	font-weight:bold;
-	left: 100px;
-	top: 87px;
+	left: 110px;
+	top: 80px;
 	}
 .stud_info{
 	font-weight:bold;
@@ -61,7 +61,7 @@ div.main_div {
 }
 #date{
 	left: 331px;
-	top: 636px;
+	top: 653px;
 	width: 77px;
 }
 .subject_marks{
@@ -73,37 +73,43 @@ div.main_div {
 	}
 #subject_marks_1 {
 	left: 268px;
-	top: 303px;
+	top: 315px;
 }
 #subject_marks_2 {
 	left: 268px;
-	top: 348px;
+	top: 360px;
 }
 #subject_marks_3 {
 	left: 268px;
-	top: 393px;
+	top: 405px;
 }
 #subject_marks_4 {
 	left: 268px;
-	top: 437px;
+	top: 449px;
 }
 #subject_marks_5 {
 	left: 268px;
-	top: 481px;
+	top: 492px;
 }
 #subject_marks_6 {
 	left: 268px;
-	top: 526px;
+	top: 531px;
 }
 #subject_totalmarks{
 	left: 266px;
-	top: 570px;
+	top: 582px;
 }
 #subject_grade{
 	left: 63px;
-	top: 397px;
+	top: 405px;
 }
-
+.controller-sign {
+	width: 50px;
+	height: auto;
+	position: absolute;
+	top: 640px;
+	left: 60px;
+}
 </style>
 
 </head>
@@ -119,7 +125,7 @@ div.main_div {
 			foreach ($result_card_info as $key => $rcinfo) {?>
               	
 	            <div class="main_div">
-
+	               <img border="0" src="<?php echo base_url();?>assets/images/controller_examination.png" alt="" class="controller-sign" />
 				   <img border="0" src="<?php echo base_url();?>assets/images/transparent.png" alt="Pulpit rock" width="525.1" height="703.1" />
 								<div class="exam_info" id="hijri_date"><?php echo $hijri_year; ?></div>
 								<div class="stud_info" id="stud_rollno"><?php echo $rcinfo['std_roll_no'];?></div>

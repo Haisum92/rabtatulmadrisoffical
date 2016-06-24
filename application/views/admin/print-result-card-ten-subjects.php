@@ -19,7 +19,7 @@ div.main_div {
 	visibility: visible;
 	font-weight:bold;
 	left: 120px;
-	top: 95px;
+	top: 90px;
 	}
 .stud_info{
 	font-weight:bold;
@@ -61,7 +61,7 @@ div.main_div {
 }
 #date {
 	left: 342px;
-	top: 634px;
+	top: 665px;
 	width: 83px;
 }
 .subject_marks{
@@ -72,52 +72,59 @@ div.main_div {
 	visibility: visible;
 	}
 #subject_marks_1 {
-	left: 279px;
-	top: 286px;
+	left: 285px;
+	top: 292px;
 }
 #subject_marks_2 {
-	left: 279px;
-	top: 315px;
+	left: 285px;
+	top: 321px;
 }
 #subject_marks_3 {
-	left: 279px;
-	top: 344px;
+	left: 285px;
+	top: 351px;
 }
 #subject_marks_4 {
-	left: 279px;
-	top: 371px;
+	left: 285px;
+	top: 382px;
 }
 #subject_marks_5 {
-	left: 279px;
-	top: 399px;
+	left: 285px;
+	top: 413px;
 }
 #subject_marks_6 {
-	left: 279px;
-	top: 427px;
+	left: 285px;
+	top: 445px;
 }
 #subject_marks_7 {
-	left: 279px;
-	top: 455px;
+	left: 285px;
+	top: 476px;
 }
 #subject_marks_8 {
-	left: 279px;
-	top: 483px;
+	left: 285px;
+	top: 508px;
 }
 #subject_marks_9 {
-	left: 279px;
-	top: 511px;
+	left: 285px;
+	top: 537px;
 }
 #subject_marks_10 {
-	left: 279px;
-	top: 540px;
+	left: 285px;
+	top: 570px;
 }
 #subject_totalmarks{
-	left: 275px;
-	top: 569px;
+	left: 285px;
+	top: 597px;
 }
 #subject_grade{
 	left: 85px;
 	top: 334px;
+}
+.controller-sign {
+	width: 50px;
+	height: auto;
+	position: absolute;
+	top: 655px;
+	left: 85px;
 }
 </style>
 
@@ -130,9 +137,9 @@ div.main_div {
 		if ($exam_type == 1) {
 
 			foreach ($result_card_info as $key => $rcinfo) {?>
-	              	
+	             
 	             <div class="main_div">
-
+	               <img border="0" src="<?php echo base_url();?>assets/images/controller_examination.png" alt="" class="controller-sign" />
 				   <img border="0" src="<?php echo base_url();?>assets/images/transparent.png" alt="Pulpit rock" width="525.1" height="703.1" />
 								<div class="exam_info" id="hijri_date"><?php echo $hijri_year; ?></div>
 								<div class="stud_info" id="stud_rollno"><?php echo $rcinfo['std_roll_no'];?></div>
