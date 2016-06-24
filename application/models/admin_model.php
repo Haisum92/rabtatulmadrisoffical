@@ -3289,7 +3289,7 @@ class Admin_model extends CI_Model{
 	
 	}// end function get_subject_name_by_id
 
-	public function get_all_student_result_card_info($exam_id ='',$affiliated_inst_id = '',$reg_no = '',$roll_no = '',$exam_type = 1)
+	public function get_all_student_result_card_info_old($exam_id ='',$affiliated_inst_id = '',$reg_no = '',$roll_no = '',$exam_type = 1)
 	{
 		if ( !empty($affiliated_inst_id) and empty($reg_no) and empty($roll_no) ) {
 
@@ -3512,7 +3512,24 @@ class Admin_model extends CI_Model{
 									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
 									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
 									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 AND `sinfo`.std_reg_no = 143602370
 									 ORDER BY sinfo.std_roll_no ASC');
+
+				$query =  $this->db->query("SELECT sinfo.std_id,sinfo.attempt_no FROM student_info AS sinfo
+									INNER JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									INNER JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									WHERE `einfo`.`exam_info_id` = '$exam_id'
+									#AND `sinfo`.std_reg_no = 143602370
+									ORDER BY `sinfo`.std_id DESC 
+									LIMIT 1
+									");
+
+				echo "SELECT sinfo.std_id,sinfo.attempt_no FROM student_info AS sinfo
+									INNER JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									INNER JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									WHERE `einfo`.`exam_info_id` = '$exam_id'
+									AND `sinfo`.std_reg_no = 143602370
+									ORDER BY `sinfo`.std_id DESC ";
 
 
 			}else{
@@ -3537,7 +3554,459 @@ class Admin_model extends CI_Model{
 		}
 		// echo $this->db->last_query();
 		if ($query->num_rows() > 0) {
+			echo '<pre>';print_r($query->result_array());echo '</pre>';
+			die();
 			return $query->result_array();
+		}else{
+			return NULL;
+		}
+		
+	}// end function get_all_student_result_card_info
+
+	public function get_all_student_result_card_info($exam_id ='',$affiliated_inst_id = '',$reg_no = '',$roll_no = '',$exam_type = 1)
+	{
+		$returnable_response = $subject_array = $student_records = $result_info = $obtained_marks_array = $subject_status_array = array();
+		
+		if ( !empty($affiliated_inst_id) and empty($reg_no) and empty($roll_no) ) {
+		
+			if ($exam_type == 1) {
+				
+				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no
+								FROM student_info AS sinfo 
+							 	LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+							 	LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+							 	LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+							 	WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+							 	AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
+								ORDER BY sinfo.std_roll_no ASC';
+				$query = $this->db->query($myquery);
+				/*$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+									 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+									 FROM student_info AS sinfo 
+									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
+									 ORDER BY sinfo.std_roll_no ASC');*/
+			}else{
+				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
+										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
+										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
+										  GROUP_CONCAT(rpinfo.subject_status ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_Sub_status,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_id ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as subject_id,
+										  (SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Obtained_marks,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_status ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Sub_status
+										  FROM student_info AS sinfo 
+										  LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+										  LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+										  WHERE `einfo`.`exam_info_id` = '.$exam_id.' 
+										  AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
+										  GROUP BY rpinfo.std_id ORDER BY sinfo.std_roll_no ASC LIMIT 1');
+			}
+			
+			// $query = $this->db->select('sinfo.*,sinfo.std_id AS student_id,ainfo.*,rinfo.*')
+			// 			  ->from('student_info AS sinfo')
+			// 			  ->join('student_exam_info AS seinfo','seinfo.std_id = sinfo.std_id','left')
+			// 			  ->join('affiliation_info AS ainfo','ainfo.inst_reg_no = sinfo.std_institute_reg_no','left')
+			// 			  ->join('result_info AS rinfo','rinfo.std_id = sinfo.std_id','left')
+			// 			  ->where('seinfo.exam_id',$exam_id)
+			// 			  ->order_by('')
+			// 			  // ->where('sinfo.std_id',$std_id)
+			// 			  ->get();
+			// SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+			// (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo
+			// WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks
+			// FROM student_info AS sinfo LEFT JOIN `student_exam_info` AS seinfo
+			// ON `seinfo`.`std_id` = `sinfo`.`std_id`
+			// LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id`
+			// LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+			// WHERE `einfo`.`exam_info_id` = '9'
+			// AND `sinfo`.`std_institute_reg_no` = '1'
+			// ORDER BY sinfo.std_roll_no ASC
+			// SELECT sinfo.*, einfo.*,ainfo.affli_shortname, (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks FROM student_info AS sinfo LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no` WHERE `einfo`.`exam_info_id` = '9' AND `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no` AND `sinfo`.`std_institute_reg_no` = '678' ORDER BY sinfo.std_roll_no ASC
+		}elseif (!empty($affiliated_inst_id) and !empty($reg_no) and !empty($roll_no)) {
+			if ($exam_type == 1) {
+				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no
+								FROM student_info AS sinfo 
+							 	LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+								LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+								LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+								WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+								AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
+								AND `sinfo`.`std_reg_no` = '.$reg_no.'
+								AND `sinfo`.`std_roll_no` = '.$roll_no.'
+								ORDER BY sinfo.std_roll_no ASC';
+				$query = $this->db->query($myquery);
+				/*$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+									 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+									 FROM student_info AS sinfo 
+									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
+									 AND `sinfo`.`std_reg_no` = '.$reg_no.'
+									 AND `sinfo`.`std_roll_no` = '.$roll_no.'
+									 ORDER BY sinfo.std_roll_no ASC');*/
+			}else{
+				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
+										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
+										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
+										  GROUP_CONCAT(rpinfo.subject_status ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_Sub_status,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_id ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as subject_id,
+										  (SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Obtained_marks,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_status ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Sub_status
+										  FROM student_info AS sinfo 
+										  LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+										  LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+										  WHERE `einfo`.`exam_info_id` = '.$exam_id.' 
+										  AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
+										  AND `sinfo`.`std_reg_no` = '.$reg_no.'
+									 	  AND `sinfo`.`std_roll_no` = '.$roll_no.'
+										  GROUP BY rpinfo.std_id ORDER BY sinfo.std_roll_no ASC');
+			}
+			
+		}elseif (empty($affiliated_inst_id) and !empty($reg_no) and !empty($roll_no)) {
+			if ($exam_type == 1) {
+				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no
+								LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+								LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+								LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+								WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+								AND `sinfo`.`std_reg_no` = '.$reg_no.'
+								AND `sinfo`.`std_roll_no` = '.$roll_no.'
+								ORDER BY sinfo.std_roll_no ASC';
+				$query = $this->db->query($myquery);
+				/*$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+									 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+									 FROM student_info AS sinfo 
+									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 AND `sinfo`.`std_reg_no` = '.$reg_no.'
+									 AND `sinfo`.`std_roll_no` = '.$roll_no.'
+									 ORDER BY sinfo.std_roll_no ASC');*/
+			}else{
+				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
+										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
+										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
+										  GROUP_CONCAT(rpinfo.subject_status ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_Sub_status,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_id ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as subject_id,
+										  (SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Obtained_marks,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_status ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Sub_status
+										  FROM student_info AS sinfo 
+										  LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+										  LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+										  WHERE `einfo`.`exam_info_id` = '.$exam_id.' 
+										  AND `sinfo`.`std_reg_no` = '.$reg_no.'
+									 	  AND `sinfo`.`std_roll_no` = '.$roll_no.'
+										  GROUP BY rpinfo.std_id ORDER BY sinfo.std_roll_no ASC LIMIT 1');
+			}
+			
+		}elseif (empty($affiliated_inst_id) and !empty($reg_no) and empty($roll_no)) {
+			if ($exam_type == 1) {
+				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no
+								FROM student_info AS sinfo 
+								LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+								LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+								LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+								WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+								AND `sinfo`.`std_reg_no` = '.$reg_no.'
+								ORDER BY sinfo.std_roll_no ASC';
+				$query = $this->db->query($myquery);
+				/*$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+									 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+									 FROM student_info AS sinfo 
+									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 AND `sinfo`.`std_reg_no` = '.$reg_no.'
+									 ORDER BY sinfo.std_roll_no ASC');*/
+			}else{
+				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
+										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
+										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
+										  GROUP_CONCAT(rpinfo.subject_status ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_Sub_status,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_id ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as subject_id,
+										  (SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Obtained_marks,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_status ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Sub_status
+										  FROM student_info AS sinfo 
+										  LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+										  LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+										  WHERE `einfo`.`exam_info_id` = '.$exam_id.' 
+									 	  AND `sinfo`.`std_reg_no` = '.$reg_no.'
+										  GROUP BY rpinfo.std_id ORDER BY sinfo.std_roll_no ASC');
+			}
+			
+		}elseif (empty($affiliated_inst_id) and empty($reg_no) and !empty($roll_no)) {
+			
+			if ($exam_type == 1) {
+				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no
+								FROM student_info AS sinfo 
+								LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+								LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+								LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+								WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+								AND `sinfo`.`std_roll_no` = '.$roll_no.'
+								ORDER BY sinfo.std_roll_no ASC';
+				$query = $this->db->query($myquery);
+				/*$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+									 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+									 FROM student_info AS sinfo 
+									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 AND `sinfo`.`std_roll_no` = '.$roll_no.'
+									 ORDER BY sinfo.std_roll_no ASC');*/
+			}else{
+				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
+										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
+										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
+										  GROUP_CONCAT(rpinfo.subject_status ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_Sub_status,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_id ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as subject_id,
+										  (SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Obtained_marks,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_status ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Sub_status
+										  FROM student_info AS sinfo 
+										  LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+										  LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+										  WHERE `einfo`.`exam_info_id` = '.$exam_id.' 
+									 	  AND `sinfo`.`std_roll_no` = '.$roll_no.'
+										  GROUP BY rpinfo.std_id ORDER BY sinfo.std_roll_no ASC LIMIT 1');
+			}
+		
+		}else{
+
+			if ($exam_type == 1) {
+
+				$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+									 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+									 FROM student_info AS sinfo 
+									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
+									 #AND `sinfo`.`std_reg_no` = 143602547
+									 ORDER BY sinfo.std_roll_no ASC');
+			}else{
+
+				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
+										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
+										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
+										  GROUP_CONCAT(rpinfo.subject_status ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_Sub_status,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_id ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as subject_id,
+										  (SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Obtained_marks,
+										  (SELECT GROUP_CONCAT(rsinfo.subject_status ORDER BY rsinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rsinfo WHERE rsinfo.std_id = rpinfo.regular_student_id) as Sub_status
+										  FROM student_info AS sinfo 
+										  LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id`
+										  LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+										  LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+										  WHERE `einfo`.`exam_info_id` = '.$exam_id.' 
+										  GROUP BY rpinfo.std_id ORDER BY sinfo.std_roll_no ASC');
+			}
+		
+		}
+		
+		// echo $this->db->last_query();
+
+		if ($query->num_rows() > 0) {
+
+			if ($exam_type != 1) {
+				return $query->result_array();
+			}
+			$student_records = $query->result_array();
+			/*echo '<pre>';print_r($student_records);echo '</pre>';
+			die();*/
+
+			foreach ($student_records as $key => $rec) 
+			{					
+				if ($rec['attempt_no'] == "first") {
+
+					$sb_query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
+												 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
+												 (SELECT GROUP_CONCAT(rinfo.subject_id ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as subject_id
+												 FROM student_info AS sinfo 
+												 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+												 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+												 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
+												 WHERE `sinfo`.`std_id` = '.$rec['std_id'].'
+												 ORDER BY sinfo.std_roll_no ASC');
+					
+					$response = $sb_query->result_array();
+					/*echo '<pre>';print_r($response[0]);echo '</pre>';
+					die();*/
+					$returnable_response[] = $response[0]; 
+					
+				}elseif($rec['attempt_no'] == "second"){
+					
+					$student_info = $this->get_single_student_info_by_id($rec['std_id']);
+					$student_info = $student_info[0];
+					
+					$r_result_info_query  = $this->db->query("SELECT rsrinfo.* FROM repeat_student_result_info AS rsrinfo WHERE rsrinfo.std_id = ".$rec['std_id']." ORDER BY rsrinfo.subject_id ASC");
+					$r_result_info = $r_result_info_query->result_array();
+					
+					$r_result_info_sub_query = $this->db->query("SELECT rinfo.* FROM result_info as rinfo WHERE rinfo.std_id = ".$r_result_info[0]['regular_student_id']." ORDER BY rinfo.subject_id ASC ");
+					$r_result_info_sub = $r_result_info_sub_query->result_array();
+					if($r_result_info and count($r_result_info) > 0){
+						foreach ($r_result_info as $key => $res)
+						{
+							$subject_array[] = $res['subject_id'];
+							$obtained_marks_array[] = $res['obtained_marks'];
+							$subject_status_array[] = $res['subject_status'];
+						}	
+					}
+					
+					if($r_result_info_sub and count($r_result_info_sub) > 0){
+						foreach ($r_result_info_sub as $key => $res)
+						{
+							if (!in_array($res['subject_id'],$subject_array)) {
+								$subject_array[] = $res['subject_id'];
+								$obtained_marks_array[] = $res['obtained_marks'];
+								$subject_status_array[] = $res['subject_status'];
+							}
+						}
+					}
+					$merged_array = array_combine($subject_array,$obtained_marks_array);
+	    		  	ksort($merged_array);
+	    		  	$std_subjects 		= implode(",", array_keys($merged_array));
+	    		  	$std_obtained_marks = implode(",", array_values($merged_array));
+					$std_subject_status = implode(",", $subject_status_array);
+					
+					$student_info['subject_id'] = $std_subjects;
+					$student_info['Obtained_marks'] = $std_obtained_marks;
+					$student_info['Sub_status'] = $std_subject_status;
+					$returnable_response[] = $student_info;
+					unset($subject_array,$obtained_marks_array,$subject_status_array,$std_subjects,$std_obtained_marks,$std_subject_status);
+					
+				}elseif($rec['attempt_no'] == "third"){
+					
+					$student_info = $this->get_single_student_info_by_id($rec['std_id']);
+					$student_info = $student_info[0];
+					
+					$r_result_info_query  = $this->db->query("SELECT rsrinfo.* FROM repeat_student_result_info AS rsrinfo WHERE rsrinfo.std_id = ".$rec['std_id']." ORDER BY rsrinfo.subject_id ASC");
+					$r_result_info = $r_result_info_query->result_array();
+					/*echo '<pre>';print_r($r_result_info);echo '</pre>';*/
+					
+					$r_result_info_sub_query = $this->db->query("SELECT rsinfo.* FROM repeat_student_result_info as rsinfo WHERE rsinfo.std_id = ".$r_result_info[0]['regular_student_id']." ORDER BY rsinfo.subject_id ASC ");
+					$r_result_info_sub = $r_result_info_sub_query->result_array();
+					/*echo '<pre>';print_r($r_result_info_sub);echo '</pre>';*/
+					$r_result_info_sub_query_2 = $this->db->query("SELECT rinfo.* FROM result_info as rinfo WHERE rinfo.std_id = ".$r_result_info_sub[0]['regular_student_id']." ORDER BY rinfo.subject_id ASC ");
+					$r_result_info_sub_2 = $r_result_info_sub_query_2->result_array();
+					/*echo '<pre>';print_r($r_result_info_sub_2);echo '</pre>';*/
+					if($r_result_info and count($r_result_info) > 0){
+						foreach ($r_result_info as $key => $res)
+						{
+							$subject_array[] = $res['subject_id'];
+							$obtained_marks_array[] = $res['obtained_marks'];
+							$subject_status_array[] = $res['subject_status'];
+						}	
+					}
+					
+					if($r_result_info_sub and count($r_result_info_sub) > 0){
+						foreach ($r_result_info_sub as $key => $res)
+						{
+							if (!in_array($res['subject_id'],$subject_array)) {
+								$subject_array[] = $res['subject_id'];
+								$obtained_marks_array[] = $res['obtained_marks'];
+								$subject_status_array[] = $res['subject_status'];
+							}
+						}
+					}
+					if($r_result_info_sub_2 and count($r_result_info_sub_2) > 0){
+						foreach ($r_result_info_sub_2 as $key => $res)
+						{
+							if (!in_array($res['subject_id'],$subject_array)) {
+								$subject_array[] = $res['subject_id'];
+								$obtained_marks_array[] = $res['obtained_marks'];
+								$subject_status_array[] = $res['subject_status'];
+							}
+						}
+					}
+					$merged_array = array_combine($subject_array,$obtained_marks_array);
+	    		  	ksort($merged_array);
+	    		  	$std_subjects 		= implode(",", array_keys($merged_array));
+	    		  	$std_obtained_marks = implode(",", array_values($merged_array));
+					$std_subject_status = implode(",", $subject_status_array);
+					$student_info['subject_id'] = $std_subjects;
+					$student_info['Obtained_marks'] = $std_obtained_marks;
+					$student_info['Sub_status'] = $std_subject_status;
+					$returnable_response[] = $student_info;
+					unset($subject_array,$obtained_marks_array,$subject_status_array,$std_subjects,$std_obtained_marks,$std_subject_status);
+					
+				}elseif($rec['attempt_no'] == "f_to_f"){
+					
+					
+					$student_info = $this->get_single_student_info_by_id($rec['std_id']);
+					$student_info = $student_info[0];
+					
+					$r_result_info_query  = $this->db->query("SELECT rsrinfo.* FROM repeat_student_result_info AS rsrinfo WHERE rsrinfo.std_id = ".$rec['std_id']." ORDER BY rsrinfo.subject_id ASC");
+					$r_result_info = $r_result_info_query->result_array();
+					
+					$r_result_info_sub_query = $this->db->query("SELECT rinfo.* FROM result_info as rinfo WHERE rinfo.std_id = ".$r_result_info[0]['regular_student_id']." ORDER BY rinfo.subject_id ASC ");
+					$r_result_info_sub = $r_result_info_sub_query->result_array();
+					if($r_result_info and count($r_result_info) > 0){
+						foreach ($r_result_info as $key => $res)
+						{
+							$subject_array[] = $res['subject_id'];
+							$obtained_marks_array[] = $res['obtained_marks'];
+							$subject_status_array[] = $res['subject_status'];
+						}	
+					}
+					
+					if($r_result_info_sub and count($r_result_info_sub) > 0){
+						foreach ($r_result_info_sub as $key => $res)
+						{
+							if (!in_array($res['subject_id'],$subject_array)) {
+								$subject_array[] = $res['subject_id'];
+								$obtained_marks_array[] = $res['obtained_marks'];
+								$subject_status_array[] = $res['subject_status'];
+							}
+						}
+					}
+					
+					$merged_array = array_combine($subject_array,$obtained_marks_array);
+	    		  	ksort($merged_array);
+	    		  	$std_subjects 		= implode(",", array_keys($merged_array));
+	    		  	$std_obtained_marks = implode(",", array_values($merged_array));
+					$std_subject_status = implode(",", $subject_status_array);
+					
+					$student_info['subject_id'] = $std_subjects;
+					$student_info['Obtained_marks'] = $std_obtained_marks;
+					$student_info['Sub_status'] = $std_subject_status;
+					$returnable_response[] = $student_info;
+					// echo '<pre>';print_r($student_info);echo '</pre>';
+					// die('yoho!');
+					unset($subject_array,$obtained_marks_array,$subject_status_array,$std_subjects,$std_obtained_marks,$std_subject_status);
+					
+				}
+			}// END FOREACH
+			/*echo '<pre>';print_r($returnable_response);echo '</pre>';
+			die('yoho!');*/
+			if (count($returnable_response) > 0) {
+				return $returnable_response;
+			}else {
+				return NULL;
+			}
 		}else{
 			return NULL;
 		}

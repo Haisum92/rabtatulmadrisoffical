@@ -147,7 +147,8 @@ ul.nav a:hover, ul.nav a:active, ul.nav a:focus { /* this changes the background
 	if ($gazetInfo != NULL) {
 		// exam_name
 		if ($exam_type == 1) {
-
+/*echo '<pre>';print_r($gazetInfo);echo '</pre>';
+	die();*/
 			$count = 1;foreach ($gazetInfo as $key => $info) {?>
 
 		    <?php if($count == 1){?>
@@ -204,6 +205,7 @@ ul.nav a:hover, ul.nav a:active, ul.nav a:focus { /* this changes the background
 				    		  $cheating = false;
 				    		  $cheatCount = 0;
 				    		  $subject_id = explode(',', $info['subject_id']);
+				    		  // echo '<pre>';print_r($subject_id);echo '</pre>';
 				    		  $obtained_marks = explode(',', $info['Obtained_marks']);
 				    		  $sub_status = explode(',', $info['Sub_status']);
 				    		  $iterator = count($obtained_marks);

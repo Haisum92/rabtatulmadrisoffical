@@ -138,9 +138,9 @@ div.main_div {
 
 
 					<?php 	$marks_array = explode(',', $rcinfo['Obtained_marks']);
-						  	$sliced_index_value = array_splice($marks_array, 4, 5);
+						  	/*$sliced_index_value = array_splice($marks_array, 4, 5);
 						  	krsort($sliced_index_value);
-						  	array_splice($marks_array,3,0,$sliced_index_value);
+						  	array_splice($marks_array,3,0,$sliced_index_value);*/
 							// echo '<pre>';print_r($marks_array);echo '</pre>';
 							$div_count = 1;
 							$total = true;
