@@ -54,7 +54,7 @@
                                             <td class="center">
                                                 <a href="<?php echo base_url();?>admin/viewStudent/<?php echo $student['std_id'];?>"><button type="button" class="btn btn-info">تفصیل</button></a>
                                                 <a href="<?php echo base_url();?>admin/editStudent/<?php echo $student['std_id'];?>"><button type="button" class="btn btn-warning">ترمیم</button></a>
-                                                <a href="<?php echo base_url();?>admin/deleteStudent/<?php echo $student['std_id'];?>" onclick="return confirm('آپ طالب علم کے ریکارڈ کو ختم کرنا چاہتے ہیں?');"><button type="button" class="btn btn-danger">خارج</button></a>
+                                                <?php /*<a href="<?php echo base_url();?>admin/deleteStudent/<?php echo $student['std_id'];?>" onclick="return confirm('آپ طالب علم کے ریکارڈ کو ختم کرنا چاہتے ہیں?');"><button type="button" class="btn btn-danger">خارج</button></a>*/?>
                                             </td>
                                         </tr>
                                     <?php }?>

@@ -1408,15 +1408,76 @@ class Admin extends CI_Controller {
 
 	}// end function viewTenCourseStudentFemale
 
-	public function deleteStudent($student_id = '')
+	public function deleteStudent($student_id = '',$exam_id = '',$exam_type = '')
 	{
-		if (empty($student_id)) {
-			return false;
+		$class_grade = $this->admin_model->get_exam_class_grade($exam_id);
+		
+		if (empty($student_id) or empty($exam_id)) {
+
+			$this->session->set_flashdata('failure', 'Please select student first.');
+
+			switch ($class_grade) {
+				case 'grade0':
+					redirect('admin/oneSubjectStudents/'.$exam_id.'/'.$exam_type);
+					break;
+				case 'grade1':
+					redirect('admin/oneSubjectStudents/'.$exam_id.'/'.$exam_type);
+					break;
+				case 'grade3':
+					redirect('admin/sixSubjectStudents/'.$exam_id.'/'.$exam_type);
+					break;
+				case 'grade4':
+					redirect('admin/tenSubjectStudents/'.$exam_id.'/'.$exam_type);
+					break;
+				case 'grade5':
+					redirect('admin/viewAllStudents');
+					break;
+				case 'grade6':
+					redirect('admin/tenSubjectStudents/viewAllStudents');
+					break;
+				case 'grade7':
+					redirect('admin/viewAllStudents');
+					break;
+				default:
+					redirect('admin/viewAllStudents');
+					break;
+			}
 		}
+		
 		if ($this->admin_model->delete_student($student_id)) {
-				$this->session->set_flassshdata('success', 'اسٹوڈنٹ ریکارڈ کامیابی سے خارج');
-				redirect('admin/viewAllStudents/','refresh');
+				
+				$this->session->set_flashdata('success', 'اسٹوڈنٹ ریکارڈ کامیابی سے خارج');
+				
+				switch ($class_grade) 
+				{
+					case 'grade0':
+						redirect('admin/oneSubjectStudents/'.$exam_id.'/'.$exam_type);
+						break;
+					case 'grade1':
+						redirect('admin/oneSubjectStudents/'.$exam_id.'/'.$exam_type);
+						break;
+					case 'grade3':
+						redirect('admin/sixSubjectStudents/'.$exam_id.'/'.$exam_type);
+						break;
+					case 'grade4':
+						redirect('admin/tenSubjectStudents/'.$exam_id.'/'.$exam_type);
+						break;
+					case 'grade5':
+						redirect('admin/viewAllStudents');
+						break;
+					case 'grade6':
+						redirect('admin/tenSubjectStudents/viewAllStudents');
+						break;
+					case 'grade7':
+						redirect('admin/viewAllStudents');
+						break;
+					default:
+						redirect('admin/viewAllStudents');
+						break;
+				}
+
 		}else{
+
 			$this->session->set_flashdata('failure', 'اسٹوڈنٹ ریکارڈحذف کرنے سے قاصر');
 				redirect('admin/viewAllStudents/','refresh');
 		}
@@ -2986,15 +3047,17 @@ class Admin extends CI_Controller {
 		$data['gazetInfo'] = $this->admin_model->get_gazet_detail_for_six_or_ten_subjects($exam_id,$exam_type,$inst_id);
 		// echo '<pre>';print_r($data['gazetInfo']);echo '</pre>';
 		// die();
-		if ($exam_gender == 'm') {
+		$this->load->view('admin/print-shahad-tul-sanvia-al-aama-talbat',$data);
+		
+		/*if ($exam_gender == 'm') {
 
-			$this->load->view('admin/print-shahad-tul-sanvia-al-aama-talba',$data);
+			$this->load->view('admin/print-shahad-tul-sanvia-al-aama-talbat',$data);
 		
 		}else{
 			// echo 'f';
 			$this->load->view('admin/print-shahad-tul-sanvia-al-aama-talbat',$data);
 		
-		}
+		}*/
 
 	}// end function printShahadTulSanviaAlAama
 
@@ -3125,15 +3188,15 @@ class Admin extends CI_Controller {
 
 	public function printResultCard()
 	{
+		/*echo '<pre>';print_r($_POST);echo '</pre>';
+		die('HERE');*/
 		$this->login_check();
 		$data['title'] = 'رزلٹ کارڈ پرنٹ کریں';
 		$data['exams_array'] = $this->admin_model->get_all_exams_for_result();
 		$data['affiliated_institutes_array'] = $this->admin_model->get_affiliated_institutes_info();
-		// echo '<pre>';print_r($data['affiliated_institutes_array']);echo '</pre>';
-
 		if ($this->preCheckPrintResultCard() ) {
 
-						
+				
 			$class_type = $this->admin_model->get_exam_class_grade($this->input->post('exam_id'));//die();
 			$exam_type = $this->admin_model->get_exam_type_by_exam_id($this->input->post('exam_id'));//die();
 			switch ($class_type) {
@@ -3298,8 +3361,8 @@ class Admin extends CI_Controller {
 	public function printDegree()
 	{
 		$degree_detail = $this->session->userdata('degree_detail');
-		// echo '<pre>';print_r($degree_detail);echo '</pre>';
-		// die();
+		/*echo '<pre>';print_r($degree_detail);echo '</pre>';
+		die();*/
 		if (empty($degree_detail) ) {
 			$this->session->set_flashdata('failure','دوبارہ کوشیش کریں شکریہ');
 			redirect('admin/degreeForm');
@@ -3309,8 +3372,9 @@ class Admin extends CI_Controller {
 		// echo 'exam id: '.$degree_detail['exam_id'];
 		$exam_class_grade = $this->admin_model->get_exam_class_grade($degree_detail['exam_id']);
 		$data['student_record'] = $this->admin_model->get_exam_students_for_degree_print($degree_detail['exam_id'],$degree_detail['exam_type'],$exam_class_grade);
-		// echo '<pre>';print_r($data['student_record']);echo '</pre>';
-		// die();
+		/*echo '<pre>';print_r($data['student_record']);echo '</pre>';
+		die('i am here');*/
+		$data['exam_class_grade'] =  $exam_class_grade;
 		$this->load->view('admin/print-degree-for-single-subject',$data);
 	
 	}// end function printDegree

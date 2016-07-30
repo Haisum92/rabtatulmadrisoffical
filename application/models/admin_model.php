@@ -1083,8 +1083,13 @@ class Admin_model extends CI_Model{
 
 	public function delete_student($student_id ='')
 	{
+		/*echo '<pre>';print_r($student_id);echo '</pre>';
+		die('yoho!');*/
+		$this->db->where('std_id', $student_id)->delete('repeat_student_result_info');
+		$this->db->where('std_id', $student_id)->delete('result_info');
 		$this->db->where('std_id', $student_id)->delete('student_exam_info');
 		$this->db->where('std_id', $student_id)->delete('student_info');
+
 		if ($this->db->affected_rows() > 0) {
 			return true;
 		}else{
@@ -3579,6 +3584,7 @@ class Admin_model extends CI_Model{
 							 	WHERE `einfo`.`exam_info_id` = '.$exam_id.'
 							 	AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
 								ORDER BY sinfo.std_roll_no ASC';
+
 				$query = $this->db->query($myquery);
 				/*$query = $this->db->query('SELECT sinfo.*, einfo.*,ainfo.affli_shortname,
 									 (SELECT GROUP_CONCAT(rinfo.obtained_marks ORDER BY rinfo.subject_id ASC SEPARATOR ",") FROM result_info AS rinfo WHERE rinfo.std_id = sinfo.std_id) as Obtained_marks,
@@ -3591,6 +3597,7 @@ class Admin_model extends CI_Model{
 									 AND `sinfo`.`std_institute_reg_no` = '.$affiliated_inst_id.'
 									 ORDER BY sinfo.std_roll_no ASC');*/
 			}else{
+
 				$query = $this->db->query('SELECT sinfo.*, `einfo`.*,ainfo.affli_shortname,
 										  GROUP_CONCAT(rpinfo.subject_id ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_subject_id,
 										  GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ",") AS r_obtained_marks,
@@ -3675,7 +3682,7 @@ class Admin_model extends CI_Model{
 			
 		}elseif (empty($affiliated_inst_id) and !empty($reg_no) and !empty($roll_no)) {
 			if ($exam_type == 1) {
-				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no
+				$myquery  = 'SELECT sinfo.std_id,sinfo.attempt_no FROM student_info sinfo
 								LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
 								LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
 								LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
@@ -4038,127 +4045,176 @@ class Admin_model extends CI_Model{
 								 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
 								 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
 								 AND  `rinfo`.`obtained_marks` > 39 ORDER BY sinfo.std_roll_no ASC');
-
 			if ($query->num_rows() > 0) {
-
 				return $query->result_array();
 			}else{
 				return NULL;
 			}
-
 		}else{
-			// echo 'I am here';die();
-			$query = $this->db->query('SELECT sinfo.*,SUM(rinfo.obtained_marks) AS obtained_marks,
-									 einfo.*,ainfo.affli_shortname
-									 FROM student_info AS sinfo 
-									 LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
-									 LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
-									 LEFT JOIN `result_info` AS rinfo ON `rinfo`.std_id =  `sinfo`.`std_id`
-									 LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no`
-									 WHERE `einfo`.`exam_info_id` = '.$exam_id.'
-									 AND  `rinfo`.`Obtained_marks` > 39 ORDER BY sinfo.std_roll_no ASC');
-		
-			//echo $this->db->last_query();
-			if ($query->num_rows() > 0) {
-
-				$retured_data = $query->result_array();
-				// echo '<pre>';print_r($query->result_array());echo '</pre>';
-				$obtained_marks = $retured_data[0]['obtained_marks'];
-				// die();
-				$pass_students = 0;
-				$break_the_loop = true;
-				$exam_info = $this->get_class_and_exam_info_by_exam_id($exam_id);
-				// echo $exam_info[0]['class_type'];
-				$total_no_of_students = $query->num_rows();
-			
-				if ($exam_info[0]['class_type'] == 'grade0' || $exam_info[0]['class_type'] == 'grade1') {
-
-					foreach ($query->result_array() as $key => $record) {
-						if ($record['Obtained_marks'] > 39) {
-							// echo 'Passed students: ';
-							 // echo ++$pass_students;echo '<br/>';
-							 ++$pass_students;
-						}
-					}
-
-				}elseif ($exam_info[0]['class_type'] == 'grade3') {
-
-					foreach ($query->result_array() as $key => $record) {
-
-						$marks_array = explode(',', $record['obtained_marks']);
-						// echo '<pre>';print_r($marks_array);echo '</pre>';
-						// $no_of_marks = array_sum(array)
-						for ($i= 0; $i < 6 ; $i++) {
-
-							if(array_key_exists($i, $marks_array)){
-								
-								if ($marks_array[$i] > 39) {
-									// echo 'here'.$i.'<br/>';
-									$break_the_loop = false;
-
-								}else{
-									$break_the_loop = true;
-									break;
-								}
-
-							}else{
-								$break_the_loop = true;
-								break;
-							}
-						}// end for loop
-
-						if (!$break_the_loop) {
-							// echo 'student is pass ';
-							// echo ++$pass_students;echo '<br/>';
-							++$pass_students;
-						}
-
-					}// end foreach loop
-
-				}elseif ($exam_info[0]['class_type'] == 'grade4') {
-
-					foreach ($query->result_array() as $key => $record) {
-						$marks_array = explode(',', $record['obtained_marks']);
-						// echo '<pre>';print_r($marks_array);echo '</pre>';
-						for ($i=0; $i < 10; $i++) { 
-							if(array_key_exists($i, $marks_array)){
-								// echo 'key exists '.$i.'<br/>';
-								if ($marks_array[$i] > 39) {
-									// echo 'here'.$i.'<br/>';
-									$break_the_loop = false;
-
-								}else{
-									$break_the_loop = true;
-									break;
-								}
-							}else{
-								$break_the_loop = true;
-								break;
-							}
-						}// end for loop
-						if (!$break_the_loop) {
-							// echo 'student is pass ';
-							// echo ++$pass_students;echo '<br/>';
-							++$pass_students;
-						}
-					}
-				
+			/*echo '<pre>';print_r($exam_id);echo '</pre>';
+			die('yoho!');*/
+			if ($exam_type == 1) {
+				// echo 'I am here';die();
+				$myquery = $this->db->query("SELECT sinfo.std_id,sinfo.attempt_no FROM student_info AS sinfo
+									INNER JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+									INNER JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+									WHERE `einfo`.`exam_info_id` = ".$exam_id."
+									");
+			}else{
+				$myquery = $this->db->query("SELECT sinfo.*, `einfo`.*,`ainfo`.*,
+									GROUP_CONCAT(rpinfo.obtained_marks ORDER BY rpinfo.subject_id ASC SEPARATOR ',') AS r_obtained_marks,
+									(SELECT GROUP_CONCAT(rsinfo.obtained_marks ORDER BY rsinfo.subject_id ASC SEPARATOR ',') FROM result_info AS rsinfo 
+									WHERE rsinfo.std_id = rpinfo.regular_student_id AND rsinfo.`obtained_marks` > 39) AS Obtained_marks 
+								FROM student_info AS sinfo 
+								LEFT JOIN `repeat_student_result_info` AS rpinfo ON `rpinfo`.`std_id` = `sinfo`.`std_id` 
+								LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+								LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+								LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no` 
+								WHERE `einfo`.`exam_info_id` = ".$exam_id." 
+								AND rpinfo.obtained_marks > 39 
+								GROUP BY rpinfo.std_id 
+								ORDER BY sinfo.std_roll_no ASC");
+			}
+			// echo '<pre>';print_r($myquery);echo '</pre>';
+			// echo $this->db->last_query();
+			// die('yoho!');
+			if ($myquery->num_rows() > 0) 
+			{
+				if ($exam_type != 1) {
+					return $myquery->result_array();
 				}
-				$pass_student_percentage = ($pass_students / $total_no_of_students) * 100;
-				$failed_student_percentage = 100 - $pass_student_percentage;
-				// echo '<pre>';print_r($query->result_array());echo '</pre>';
-				// die();
-				$response = array(
-								'total_no_students' => $total_no_of_students,
-								'passed_student_percentage'	=> round($pass_student_percentage, 2),
-								'failed_student_percentage'	=>	round($failed_student_percentage,2),
-								'exam_name'			=> $exam_info[0]['exam_name']
-							);
+				$student_records = $myquery->result_array();
+				// echo '<pre>';print_r($student_records);echo '</pre>';
+				// die('yoho!');
+				$response_key = 0;
+				foreach ($student_records as $key => $rec) 
+				{
+					if ($rec['attempt_no'] == "first") 
+					{
+						$sb_query = $this->db->query("SELECT SUM(rinfo.obtained_marks) AS total_marks,cinfo.class_type,sinfo.*,ainfo.*,
+														einfo.*
+														FROM student_info AS sinfo 
+														LEFT JOIN `student_exam_info` AS seinfo ON `seinfo`.`std_id` = `sinfo`.`std_id` 
+														LEFT JOIN `exam_info` AS einfo ON `einfo`.`exam_info_id` = `seinfo`.`exam_id` 
+														LEFT JOIN `affiliation_info` AS ainfo ON `ainfo`.`inst_reg_no` = `sinfo`.`std_institute_reg_no` 
+														INNER JOIN `result_info` AS rinfo ON `rinfo`.`std_id` = `sinfo`.`std_id` 
+														INNER JOIN `classes_info` AS cinfo ON `cinfo`.`class_id` = `einfo`.`class_id` 
+														WHERE `seinfo`.`exam_id` = ".$exam_id." 
+														AND rinfo.`obtained_marks` > 39
+														AND `sinfo`.`std_id` = ".$rec['std_id']."
+														GROUP BY rinfo.std_id 
+														HAVING CASE class_type
+														WHEN 'grade3' THEN total_marks > 239
+														WHEN 'grade4' THEN total_marks > 400
+														ELSE total_marks > 239
+														END
+														ORDER BY sinfo.std_roll_no ASC
+														LIMIT 1");
+						
+						$std_info = $sb_query->result_array();
+						if (count($std_info) > 0) {
+							$response[$response_key++] = $std_info[0]; 
+						}
+					}elseif($rec['attempt_no'] == "second"){
+						$temp_total_marks = 0;
+						$temp_array = $inst_info = $r_result_info = $r_result_info_sub = array();
+						$student_info = $this->get_single_student_info_by_id($rec['std_id']);
+						$student_info = $student_info[0];
+						$inst_info = $this->get_affiliated_institutes_info('',$student_info['std_institute_reg_no']);
+						$inst_info = $inst_info[0];
+						
+						$r_result_info_query  = $this->db->query("SELECT SUM(rsrinfo.obtained_marks) AS total_marks,rsrinfo.regular_student_id FROM repeat_student_result_info AS rsrinfo WHERE rsrinfo.std_id = ".$rec['std_id']." AND rsrinfo.obtained_marks > 39 GROUP BY rsrinfo.std_id ORDER BY rsrinfo.subject_id ASC");
+						$r_result_info = $r_result_info_query->result_array();
+						
+						if (count($r_result_info) > 0) {
+							$r_result_info_sub_query = $this->db->query("SELECT SUM(rinfo.obtained_marks) AS total_marks FROM result_info as rinfo WHERE rinfo.std_id = ".$r_result_info[0]['regular_student_id']." AND rinfo.obtained_marks > 39 GROUP BY rinfo.std_id ORDER BY rinfo.subject_id ASC ");
+							$r_result_info_sub = $r_result_info_sub_query->result_array();
+						}
+						if (count($r_result_info) > 0) {
+							$temp_total_marks += $r_result_info[0]['total_marks'];
+						}
+						if (count($r_result_info_sub) > 0) {
+							$temp_total_marks += $r_result_info_sub[0]['total_marks'];
+						}
+						if ($temp_total_marks > 239) {
+							switch ($grade_type) {
+								case 'grade3':									
+										$temp_array['total_marks'] = $temp_total_marks;
+										$temp_array = array_merge($temp_array,$student_info);
+										$temp_array = array_merge($temp_array,$inst_info);
+										// $temp_array['affli_shortname'] = $inst_info['affli_shortname'];
+										$response[] = $temp_array;
+									break;
+								case 'grade4':
+									if ($temp_total_marks > 400 ) {
+										$temp_array['total_marks'] = $temp_total_marks;
+										$temp_array = array_merge($temp_array,$student_info);
+										$temp_array = array_merge($temp_array,$inst_info);
+										$response[] = $temp_array;
+									}
+									break;
+								
+								default:
+									# code...
+									break;
+							}
+						}	// END IF
+					}elseif($rec['attempt_no'] == "f_to_f"){
+						
+						
+						$temp_total_marks = 0;
+						$temp_array = $inst_info = $r_result_info = $r_result_info_sub = array();
+						$student_info = $this->get_single_student_info_by_id($rec['std_id']);
+						$student_info = $student_info[0];
+						$inst_info = $this->get_affiliated_institutes_info('',$student_info['std_institute_reg_no']);
+						$inst_info = $inst_info[0];
+						
+						$r_result_info_query  = $this->db->query("SELECT SUM(rsrinfo.obtained_marks) AS total_marks,rsrinfo.regular_student_id FROM repeat_student_result_info AS rsrinfo WHERE rsrinfo.std_id = ".$rec['std_id']." AND rsrinfo.obtained_marks > 39 GROUP BY rsrinfo.std_id ORDER BY rsrinfo.subject_id ASC");
+						$r_result_info = $r_result_info_query->result_array();
+						if (count($r_result_info) > 0) {
+							$r_result_info_sub_query = $this->db->query("SELECT SUM(rinfo.obtained_marks) AS total_marks FROM result_info as rinfo WHERE rinfo.std_id = ".$r_result_info[0]['regular_student_id']." AND rinfo.obtained_marks > 39 GROUP BY rinfo.std_id ORDER BY rinfo.subject_id ASC ");
+							$r_result_info_sub = $r_result_info_sub_query->result_array();
+						}
+						
+						if (count($r_result_info) > 0) {
+							$temp_total_marks += $r_result_info[0]['total_marks'];
+						}
+						if (count($r_result_info_sub) > 0) {
+							$temp_total_marks += $r_result_info_sub[0]['total_marks'];
+						}
+						if ($temp_total_marks > 239) {
+							switch ($grade_type) {
+								case 'grade3':									
+										$temp_array['total_marks'] = $temp_total_marks;
+										$temp_array = array_merge($temp_array,$student_info);
+										$temp_array = array_merge($temp_array,$inst_info);
+										$response[] = $temp_array;
+									break;
+								case 'grade4':
+									if ($temp_total_marks > 400 ) {
+										$temp_array['total_marks'] = $temp_total_marks;
+										$temp_array = array_merge($temp_array,$student_info);
+										$temp_array = array_merge($temp_array,$inst_info);
+										$response[] = $temp_array;
+									}
+									break;
+								
+								default:
+									# code...
+									break;
+							}
+						}	// END IF
+						
+					}
+				}
+				
 				return $response;
-				// return $query->result_array();
 			}else{
 				return NULL;
 			}
+			
+				// return $query->result_array();
+			
 		}
 		
 	}// end function get_exam_students_for_degree_print

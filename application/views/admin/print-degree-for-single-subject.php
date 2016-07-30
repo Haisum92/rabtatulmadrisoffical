@@ -14,30 +14,28 @@
             }
             .degree_info{
                 font-size: 18px;
-				font-weight: bold;
+                font-weight: bold;
                 text-align:center;
                 position: absolute;
                 visibility: visible;
-
             }
-			.degree_info_arabic{
-				font-family:"Alvi Nastaleeq";
-				direction: rtl;
+            .degree_info_arabic{
+                font-family:"Alvi Nastaleeq";
+                direction: rtl;
                 font-size: 19px;
-				font-weight: bolder;
+                font-weight: bolder;
                 text-align:center;
                 position: absolute;
                 visibility: visible;
-
             }
     #total_no {
         /*font-family: 'ArabicNaskhSSK';*/
-    	width: 84px;
+        width: 84px;
         left: 750px;
         top: 442px;
     }
     #hijri_date {
-	    left: 766px;
+        left: 766px;
         top: 421px;
         width: 98px;
     }
@@ -46,7 +44,6 @@
         top: 342px;
         width: 215px;
     }
-
     #stud_fathername {
         top: 344px;
         left: 346px;
@@ -67,7 +64,6 @@
         font-size: 16px;
         direction: ltr;
     }
-
     #hijiridateminustwo {
         left: 185px;
         top: 360px;
@@ -79,29 +75,29 @@
         width: 109px;
     }
     #english_date {
-    	left: 598px;
+        left: 598px;
         top: 421px;
         width: 104px;
     }
     #stud_regno {
-    	font-weight: bold;
+        font-weight: bold;
         left: 375px;
         top: 429px;
         width: 82px;
     }
     #stud_rollno {
-	    font-weight: bold;
+        font-weight: bold;
         left: 240px;
         top: 429px;
         width: 74px;
     }
     #exam_degreebcdate {
-	    left: 646px;
+        left: 646px;
         top: 537px;
         width: 91px;
     }
     #exam_resultbcdate {
-    	left: 645px;
+        left: 645px;
         top: 500px;
         width: 89px;
     }
@@ -112,7 +108,7 @@
         width: 86px;
     }
     #exam_degreeabcdate {
-	   left: 646px;
+       left: 646px;
         top: 552px;
         width: 90px;
     }
@@ -126,15 +122,18 @@
         top: 362px;
         width: 212px;
     }
-
         </style>
     </head>
 
     <body>
     <?php 
     if ($student_record != NULL) {
-        var_dump($student_record);die();
-        foreach($student_record AS $key => $srecord){?>
+        
+       /* echo '<pre>';print_r($student_record);echo '</pre>';
+        die('yoho!');*/
+        foreach($student_record AS $key => $srecord){
+           // echo '<pre>';print_r($srecord);echo '</pre>';
+            ?>
             <div class="main_div">
             <img border="0" src="<?php echo base_url();?>assets/images/transparent.png" alt="Pulpit rock" width="954.5" height="705.5" />   
             <div class="degree_info" id="stud_address"><?php echo $srecord['std_address']; ?></div>
@@ -142,7 +141,7 @@
             $numerial_no = array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
             $arabic_no = array("۰", "۱", "۲", "۳", "٤", "۵", "٦", "۷", "۸", "۹");
             $total_marks_arabic = str_replace($numerial_no, $arabic_no, 100);
-            $obtained_marks_arabic = str_replace($numerial_no, $arabic_no, $srecord['obtained_marks']);
+            $obtained_marks_arabic = str_replace($numerial_no, $arabic_no, $srecord['total_marks']);
             echo $obtained_marks_arabic.' / '.$total_marks_arabic; ?></div>
             <div class="degree_info" id="stud_name"><?php echo $srecord['std_name']; ?></div>
             <div class="degree_info" id="stud_fathername"><?php echo $srecord['std_father_name']; ?></div>
@@ -156,17 +155,43 @@
             ?>
             <div class="degree_info_arabic" id="stud_dob"><?php echo $stud_dobinwords; ?></div>
             <div class="degree_info_arabic" id="hijiridateminustwo"><?php echo "۱٤۳٤ ھ"; ?></div>
-            <?php //if ($subjects_totalmarks == 100) {
-                if (($srecord['obtained_marks'] >= 40) && ($srecord['obtained_marks'] <= 49)) {
-                    $grade_name = 'مقبول';
-                } else if (($srecord['obtained_marks'] >= 50) && ($srecord['obtained_marks'] <= 59)) {
-                    $grade_name = 'جید';
-                } else if (($srecord['obtained_marks'] >= 60) && ($srecord['obtained_marks'] <= 69)) {
-                    $grade_name = 'جیدجدا';
-                } else if (($srecord['obtained_marks'] >= 70) && ($srecord['obtained_marks'] <= 100)) {
-                    $grade_name = 'ممتاز';
+            <?php 
+                if ($exam_class_grade == 'grade0' OR $exam_class_grade == 'grade1') {
+                    
+                    if (($srecord['total_marks'] >= 40) && ($srecord['total_marks'] <= 49)) {
+                        $grade_name = 'مقبول';
+                    } else if (($srecord['total_marks'] >= 50) && ($srecord['total_marks'] <= 59)) {
+                        $grade_name = 'جید';
+                    } else if (($srecord['total_marks'] >= 60) && ($srecord['total_marks'] <= 69)) {
+                        $grade_name = 'جیدجدا';
+                    } else if (($srecord['total_marks'] >= 70) && ($srecord['total_marks'] <= 100)) {
+                        $grade_name = 'ممتاز';
+                    }
+                    $subjects_totalmarks = '۱۰۰';
+                }elseif ($exam_class_grade == 'grade3') {
+                    if (($srecord['total_marks'] >= 240) && ($srecord['total_marks'] <= 299)) {
+                        $grade_name = 'مقبول';
+                    } else if (($srecord['total_marks'] >= 300) && ($srecord['total_marks'] <= 359)) {
+                        $grade_name = 'جید';
+                    } else if (($srecord['total_marks'] >= 360) && ($srecord['total_marks'] <= 419)) {
+                        $grade_name = 'جیدجدا';
+                    } else if ($srecord['total_marks'] >= 420) {
+                        $grade_name = 'ممتاز';
+                    }
+                    $subjects_totalmarks = '٦۰۰';
+                }elseif ($exam_class_grade == 'grade4') {
+                    if (($srecord['total_marks'] >= 400) && ($srecord['total_marks'] <= 499)) {
+                        $grade_name = 'مقبول';
+                    } else if (($srecord['total_marks'] >= 500) && ($srecord['total_marks'] <= 599)) {
+                        $grade_name = 'جید';
+                    } else if (($srecord['total_marks'] >= 600) && ($srecord['total_marks'] <= 699)) {
+                        $grade_name = 'جیدجدا';
+                    } else if (($srecord['total_marks'] >= 700) && ($srecord['total_marks'] <= 1000)) {
+                        $grade_name = 'ممتاز';
+                    }
+                    $subjects_totalmarks = '۱۰۰۰';
                 }
-                $subjects_totalmarks = '۱۰۰';
+                
             //}?>
             <div class="degree_info" id="stud_grade"><?php echo $grade_name; ?></div>
             <div class="degree_info_arabic" id="hijri_date"><?php echo $degree_date_dominic; ?></div>
